@@ -226,6 +226,12 @@ class RPCProtocol(
      * Triggered when an acknowledge response is received
      */
     private fun onDidReceiveAcknowledge(req: Int) {
+       // Prevent negative unacknowledged count
+       if (unacknowledgedCount <= 0) {
+           LOG.warn("Received acknowledge but unacknowledgedCount is already $unacknowledgedCount, ignoring. Request ID: $req")
+           return
+       }
+       
        // The next possible unresponsive time is now + increment
        unresponsiveTime = System.currentTimeMillis() + UNRESPONSIVE_TIME
        unacknowledgedCount--
@@ -246,8 +252,13 @@ class RPCProtocol(
      * Check for unresponsiveness
      */
     private fun checkUnresponsive() {
-        if (unacknowledgedCount == 0) {
+        if (unacknowledgedCount <= 0) {
             // Not waiting for anything => cannot determine responsiveness
+            // Also handle negative count case to prevent incorrect state
+            if (unacknowledgedCount < 0) {
+                LOG.warn("Unacknowledged count is negative: $unacknowledgedCount, resetting to 0")
+                unacknowledgedCount = 0
+            }
             return
         }
         
