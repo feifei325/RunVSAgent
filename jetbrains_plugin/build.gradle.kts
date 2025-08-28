@@ -230,6 +230,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.google.code.gson:gson:2.10.1")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.8.10")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.4")
 }
 
