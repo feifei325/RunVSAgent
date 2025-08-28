@@ -11,6 +11,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefBrowser
@@ -81,6 +82,27 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
     private var isDisposed = false
     private var themeInitialized = false
 
+    /**
+     * Get editor font CSS from JetBrains IDE settings
+     * @return CSS style block with font variables
+     */
+    private fun getEditorFontCss(): String {
+        // Access the global color scheme
+        val scheme = EditorColorsManager.getInstance().globalScheme
+        // Read editor font name and size
+        val editorFontName = scheme.editorFontName
+        val editorFontSize = scheme.editorFontSize
+        // Create a CSS snippet to be injected into the WebView
+        return """
+            <style id="jetbrains-editor-font-style">
+              :root {
+                --jetbrains-editor-font-family: '${editorFontName}', monospace;
+                --jetbrains-editor-font-size: ${editorFontSize}px;
+              }
+            </style>
+        """.trimIndent()
+    }
+    
     /**
      * Initialize theme manager
      * @param resourceRoot Resource root directory
@@ -277,6 +299,11 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
          * @param data HTML update data
          */
     fun updateWebViewHtml(data: WebviewHtmlUpdateData) {
+        // Inject editor font CSS into the HTML
+        val fontCss = getEditorFontCss()
+        // Inject the CSS into the <head> tag
+        data.htmlContent = data.htmlContent.replace("</head>", "$fontCss</head>")
+        
         val encodedState = getLatestWebView()?.state.toString().replace("\"", "\\\"")
         // Support both <script nonce="..."> and <script type="text/javascript" nonce="..."> formats
         val mRst = """<script(?:\s+type="text/javascript")?\s+nonce="([A-Za-z0-9]{32})">""".toRegex().find(data.htmlContent)
@@ -533,11 +560,20 @@ class WebViewInstance(
 
                 // Inject CSS variables into WebView
                 if (cssContent != null) {
+                    // Get editor font settings
+                    val scheme = EditorColorsManager.getInstance().globalScheme
+                    val editorFontName = scheme.editorFontName
+                    val editorFontSize = scheme.editorFontSize
+                    
                     val injectThemeScript = """
                         (function() {
                             console.log("Ready to inject CSS variables into WebView")
                             function injectCSSVariables() {
                                 if(document.documentElement) {
+                                    // First inject JetBrains editor font settings
+                                    document.documentElement.style.setProperty('--jetbrains-editor-font-family', "'${editorFontName}', monospace");
+                                    document.documentElement.style.setProperty('--jetbrains-editor-font-size', '${editorFontSize}px');
+                                    console.log("JetBrains editor font settings injected: ${editorFontName}, ${editorFontSize}px");
                                     // Convert cssContent to style attribute of html tag
                                     try {
                                         // Extract CSS variables (format: --name:value;)
@@ -587,13 +623,18 @@ class WebViewInstance(
                                                 overscroll-behavior-x: none;
                                                 background-color: transparent;
                                                 color: var(--vscode-editor-foreground);
-                                                font-family: var(--vscode-font-family);
+                                                font-family: var(--jetbrains-editor-font-family, var(--vscode-font-family));
                                                 font-weight: var(--vscode-font-weight);
-                                                font-size: var(--vscode-font-size);
+                                                font-size: var(--jetbrains-editor-font-size, var(--vscode-font-size));
                                                 margin: 0;
                                                 padding: 0 20px;
                                                 overflow-x: hidden;   /* prevent horizontal scrollbar */
                                                 overflow-y: auto;     /* allow vertical scrolling only */
+                                            }
+                                            
+                                            .monaco-editor {
+                                                font-family: var(--jetbrains-editor-font-family, var(--vscode-editor-font-family)) !important;
+                                                font-size: var(--jetbrains-editor-font-size, var(--vscode-editor-font-size)) !important;
                                             }
                                             
                                             img, video {
