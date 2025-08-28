@@ -5,7 +5,7 @@
 --vscode-editor-font-weight: normal;
 --vscode-editor-font-size: 16px;
 --text-link-decoration: none;
---vscode-foreground: #616161;
+--vscode-foreground: #3b3b3b;
 --vscode-disabledForeground: rgba(97, 97, 97, 0.5);
 --vscode-errorForeground: #a1260d;
 --vscode-descriptionForeground: #717171;
@@ -14,11 +14,11 @@
 --vscode-textLink-foreground: #006ab1;
 --vscode-textLink-activeForeground: #006ab1;
 --vscode-textSeparator-foreground: rgba(0, 0, 0, 0.18);
---vscode-textPreformat-foreground: #a31515;
---vscode-textPreformat-background: rgba(0, 0, 0, 0.1);
+--vscode-textPreformat-foreground: #8b0000;
+--vscode-textPreformat-background: rgba(0, 0, 0, 0.08);
 --vscode-textBlockQuote-background: #f2f2f2;
 --vscode-textBlockQuote-border: rgba(0, 122, 204, 0.5);
---vscode-textCodeBlock-background: rgba(220, 220, 220, 0.4);
+--vscode-textCodeBlock-background: rgba(240, 240, 240, 0.6);
 --vscode-sash-hoverBorder: #0090f1;
 --vscode-badge-background: #c4c4c4;
 --vscode-badge-foreground: #333333;
@@ -35,12 +35,12 @@
 --vscode-chart-axis: rgba(0, 0, 0, 0.6);
 --vscode-chart-guide: rgba(0, 0, 0, 0.2);
 --vscode-editor-background: #ffffff;
---vscode-editor-foreground: #000000;
+--vscode-editor-foreground: #1a1a1a;
 --vscode-editorStickyScroll-background: #ffffff;
 --vscode-editorStickyScrollHover-background: #f0f0f0;
 --vscode-editorStickyScroll-shadow: #dddddd;
 --vscode-editorWidget-background: #f3f3f3;
---vscode-editorWidget-foreground: #616161;
+--vscode-editorWidget-foreground: #3b3b3b;
 --vscode-editorWidget-border: #c8c8c8;
 --vscode-editorError-foreground: #e51400;
 --vscode-editorWarning-foreground: #bf8803;
@@ -56,7 +56,7 @@
 --vscode-editor-findRangeHighlightBackground: rgba(180, 180, 180, 0.3);
 --vscode-editor-hoverHighlightBackground: rgba(173, 214, 255, 0.15);
 --vscode-editorHoverWidget-background: #f3f3f3;
---vscode-editorHoverWidget-foreground: #616161;
+--vscode-editorHoverWidget-foreground: #3b3b3b;
 --vscode-editorHoverWidget-border: #c8c8c8;
 --vscode-editorHoverWidget-statusBarBackground: #e7e7e7;
 --vscode-editorInlayHint-foreground: #969696;
