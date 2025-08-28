@@ -106,6 +106,14 @@ class MainThreadCommands(val project: Project) : MainThreadCommandsShape {
      */
     override suspend fun executeCommand(id: String, args: List<Any?>): Any? {
         logger.info("Executing command: $id ")
+        
+        // Prevent unintended IDE exit commands when editing YAML files
+        // This fixes issue #94 where IDE exit dialog appears when editing Swagger YAML files
+        if (isExitCommand(id) && isEditingYamlFile()) {
+            logger.warn("Blocked potential unintended IDE exit command while editing YAML file: $id")
+            return Unit
+        }
+        
         registry.getCommand(id)?.let { cmd->
             runCmd(cmd,args)
         }?: run {
@@ -148,6 +156,41 @@ class MainThreadCommands(val project: Project) : MainThreadCommandsShape {
             return
         }
         doInvokeMethod(method,args,handler)
+    }
+    
+    /**
+     * Checks if the given command ID is related to IDE exit/quit operations.
+     *
+     * @param commandId The command identifier to check
+     * @return true if the command is an exit-related command
+     */
+    private fun isExitCommand(commandId: String): Boolean {
+        val exitCommands = listOf(
+            "workbench.action.quit",
+            "workbench.action.exit",
+            "workbench.action.closeWindow",
+            "application.exit",
+            "ide.exit",
+            "ide.quit"
+        )
+        return exitCommands.any { commandId.contains(it, ignoreCase = true) }
+    }
+    
+    /**
+     * Checks if the currently active editor is editing a YAML file.
+     *
+     * @return true if a YAML file is being edited
+     */
+    private fun isEditingYamlFile(): Boolean {
+        return try {
+            val editorManager = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+            val currentFile = editorManager.selectedEditor?.file
+            val fileName = currentFile?.name?.lowercase() ?: ""
+            fileName.endsWith(".yaml") || fileName.endsWith(".yml")
+        } catch (e: Exception) {
+            logger.error("Error checking if editing YAML file", e)
+            false
+        }
     }
 
 }

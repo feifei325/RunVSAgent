@@ -113,7 +113,7 @@ SPDX-License-Identifier: Apache-2.0
                 text="Switch Extension Provider"
                 description="Switch to a different extension provider">
             <override-text place="GoToAction" text="Switch Extension" />
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt S" />
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift alt E" />
         </action>
 
 
