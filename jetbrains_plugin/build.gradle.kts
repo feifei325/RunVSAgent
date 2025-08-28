@@ -181,7 +181,7 @@ fun Sync.prepareSandbox() {
         // To support new architectures, modify according to the logic in genPlatform.gradle script
         if (debugMode == "release") {
             // Check if platform.zip file exists and is larger than 1MB, otherwise throw exception
-            val platformZip = File("platform.zip")
+            val platformZip = File(project.projectDir, "platform.zip")
             if (platformZip.exists() && platformZip.length() >= 1024 * 1024) {
                 // Extract platform.zip to the platform subdirectory under the project build directory
                 val platformDir = File("${project.buildDir}/platform")
