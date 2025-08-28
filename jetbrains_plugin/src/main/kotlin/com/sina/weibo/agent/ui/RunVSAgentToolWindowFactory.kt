@@ -855,8 +855,23 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                 border = javax.swing.BorderFactory.createEmptyBorder(0, 0, 20, 0)
             }
 
+            // Create header panel for title and description
+            val headerPanel = JPanel()
+            headerPanel.layout = javax.swing.BoxLayout(headerPanel, javax.swing.BoxLayout.Y_AXIS)
+            headerPanel.add(titleLabel)
+            headerPanel.add(descLabel)
+
             // Plugin list with modern styling
             val pluginListPanel = createPluginListPanel()
+            
+            // Wrap plugin list panel in a JScrollPane for scrolling support
+            val scrollPane = javax.swing.JScrollPane(pluginListPanel).apply {
+                verticalScrollBarPolicy = javax.swing.JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+                horizontalScrollBarPolicy = javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+                border = javax.swing.BorderFactory.createEmptyBorder()
+                // Set preferred size to prevent the dialog from being too large
+                preferredSize = JBUI.size(600, 300)
+            }
 
             // Action buttons
             val buttonPanel = JPanel()
@@ -876,9 +891,8 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             buttonPanel.add(debugButton, BorderLayout.WEST)
             
             // Add all components
-            panel.add(titleLabel, BorderLayout.NORTH)
-            panel.add(descLabel, BorderLayout.CENTER)
-            panel.add(pluginListPanel, BorderLayout.CENTER)
+            panel.add(headerPanel, BorderLayout.NORTH)
+            panel.add(scrollPane, BorderLayout.CENTER)
             panel.add(buttonPanel, BorderLayout.SOUTH)
             
             return panel

@@ -92,7 +92,12 @@ class ExtensionSwitcherDialog(private val project: Project) : DialogWrapper(proj
             setCellRenderer(listCellRenderer())
             addListSelectionListener(listSelectionListener())
         }
-        leftPanel.add(JScrollPane(extensionList), BorderLayout.CENTER)
+        // Ensure proper scrolling support with vertical scrollbar always available
+        val scrollPane = JScrollPane(extensionList).apply {
+            verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        }
+        leftPanel.add(scrollPane, BorderLayout.CENTER)
 
         // Right side - Details and actions
         val rightPanel = JPanel(BorderLayout()).apply {
@@ -125,7 +130,13 @@ class ExtensionSwitcherDialog(private val project: Project) : DialogWrapper(proj
         detailsPanel.add(Box.createVerticalStrut(8))
 //        detailsPanel.add(setAsDefaultCheckBox)
 
-        rightPanel.add(detailsPanel, BorderLayout.CENTER)
+        // Wrap details panel in JScrollPane for better content management
+        val detailsScrollPane = JScrollPane(detailsPanel).apply {
+            verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+            border = BorderFactory.createEmptyBorder()
+        }
+        rightPanel.add(detailsScrollPane, BorderLayout.CENTER)
 
         // Bottom buttons
         val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
