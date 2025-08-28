@@ -317,9 +317,102 @@ class ExtensionProcessManager : Disposable {
      * Find executable in system path
      */
     private fun findExecutableInPath(name: String): String? {
+        // First try the standard path finding
         val nodePath = PathEnvironmentVariableUtil.findExecutableInPathOnAnyOS("node")?.absolutePath
-        LOG.info("System Node path: $nodePath")
-        return nodePath
+        if (nodePath != null) {
+            LOG.info("System Node path found: $nodePath")
+            return nodePath
+        }
+        
+        // If not found, try additional paths for version managers
+        val additionalPaths = buildAdditionalNodePaths()
+        for (path in additionalPaths) {
+            val nodeFile = File(path, if (SystemInfo.isWindows) "node.exe" else "node")
+            if (nodeFile.exists() && nodeFile.canExecute()) {
+                LOG.info("Found Node.js in additional path: ${nodeFile.absolutePath}")
+                return nodeFile.absolutePath
+            }
+        }
+        
+        // Try to execute which/where command to find node
+        val whichCommand = if (SystemInfo.isWindows) "where" else "which"
+        try {
+            val process = ProcessBuilder(whichCommand, "node").start()
+            val output = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor(2, TimeUnit.SECONDS)
+            
+            if (output.isNotEmpty()) {
+                val lines = output.split("\n")
+                for (line in lines) {
+                    val trimmedLine = line.trim()
+                    if (trimmedLine.isNotEmpty() && File(trimmedLine).exists()) {
+                        LOG.info("Found Node.js via $whichCommand command: $trimmedLine")
+                        return trimmedLine
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            LOG.debug("Failed to find node via $whichCommand command", e)
+        }
+        
+        LOG.warn("Node.js not found in system path")
+        return null
+    }
+    
+    /**
+     * Build additional paths to search for Node.js (for version managers)
+     */
+    private fun buildAdditionalNodePaths(): List<String> {
+        val paths = mutableListOf<String>()
+        val home = System.getProperty("user.home")
+        
+        // Common paths for version managers
+        if (SystemInfo.isMac || SystemInfo.isLinux) {
+            // asdf paths
+            paths.add("$home/.asdf/shims")
+            
+            // volta paths
+            paths.add("$home/.volta/bin")
+            
+            // nvm paths
+            paths.add("$home/.nvm/current/bin")
+            
+            // fnm paths
+            paths.add("$home/.fnm/current/bin")
+            
+            // homebrew paths on Mac
+            if (SystemInfo.isMac) {
+                paths.add("/opt/homebrew/bin")
+                paths.add("/usr/local/bin")
+            }
+            
+            // Common Linux paths
+            if (SystemInfo.isLinux) {
+                paths.add("/usr/bin")
+                paths.add("/usr/local/bin")
+            }
+        } else if (SystemInfo.isWindows) {
+            // volta paths on Windows
+            paths.add("$home\\.volta\\bin")
+            
+            // nvm-windows paths
+            val appData = System.getenv("APPDATA")
+            if (appData != null) {
+                paths.add("$appData\\nvm")
+            }
+            
+            // fnm paths on Windows
+            paths.add("$home\\.fnm")
+            
+            // Scoop paths
+            paths.add("$home\\scoop\\shims")
+            
+            // Common Windows paths
+            paths.add("C:\\Program Files\\nodejs")
+            paths.add("C:\\Program Files (x86)\\nodejs")
+        }
+        
+        return paths
     }
     
     /**
@@ -384,13 +477,19 @@ class ExtensionProcessManager : Disposable {
         }
 
         // Add common paths according to OS
+        val home = System.getProperty("user.home")
         val commonDevPaths = when {
             SystemInfo.isMac -> listOf(
                 "/opt/homebrew/bin",
                 "/opt/homebrew/sbin",
                 "/usr/local/bin",
                 "/usr/local/sbin",
-                "${System.getProperty("user.home")}/.local/bin"
+                "$home/.local/bin",
+                // Version manager paths
+                "$home/.asdf/shims",
+                "$home/.volta/bin",
+                "$home/.nvm/current/bin",
+                "$home/.fnm/current/bin"
             )
             SystemInfo.isWindows -> listOf(
                 "C:\\Windows\\System32",
@@ -398,9 +497,23 @@ class ExtensionProcessManager : Disposable {
                 "C:\\Windows",
                 "C:\\Windows\\System32\\WindowsPowerShell\\v1.0",
                 "C:\\Program Files\\PowerShell\\7",
-                "C:\\Program Files (x86)\\PowerShell\\7"
+                "C:\\Program Files (x86)\\PowerShell\\7",
+                // Version manager paths
+                "$home\\.volta\\bin",
+                "$home\\scoop\\shims",
+                "C:\\Program Files\\nodejs",
+                "C:\\Program Files (x86)\\nodejs"
             )
-            else -> emptyList()
+            else -> listOf(
+                "/usr/local/bin",
+                "/usr/bin",
+                "$home/.local/bin",
+                // Version manager paths for Linux
+                "$home/.asdf/shims",
+                "$home/.volta/bin",
+                "$home/.nvm/current/bin",
+                "$home/.fnm/current/bin"
+            )
         }
 
         // Add existing paths
