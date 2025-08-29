@@ -849,7 +849,18 @@ class WebViewInstance(
                 ): Boolean {
                     logger.info("onBeforeBrowse,url:${request?.url}")
                     if(request?.url?.startsWith("http://localhost") == false){
+                        // Open external link in browser
                         BrowserUtil.browse(request.url)
+                        // Navigate back to previous page to prevent WebView from freezing
+                        if (browser?.canGoBack() == true) {
+                            browser.goBack()
+                        } else {
+                            // If can't go back, reload the current page
+                            val currentUrl = frame?.url
+                            if (currentUrl != null && currentUrl.startsWith("http://localhost")) {
+                                browser?.reload()
+                            }
+                        }
                         return true
                     }
                     return false
