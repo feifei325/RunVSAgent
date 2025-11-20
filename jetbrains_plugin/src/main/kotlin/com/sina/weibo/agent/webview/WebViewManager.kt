@@ -486,6 +486,8 @@ class WebViewInstance(
         setupJSBridge()
         // Enable resource loading interception
         enableResourceInterception(extension)
+        // Setup Wayland-compatible clipboard handler
+        setupClipboardHandler()
     }
 
     /**
@@ -732,6 +734,23 @@ class WebViewInstance(
         }
     }
 
+    /**
+     * Setup Wayland-compatible clipboard handler for WebView.
+     */
+    private fun setupClipboardHandler() {
+        try {
+            val clipboardHandler = WaylandClipboardHandler()
+            val client = browser.jbCefClient
+            
+            // Add keyboard handler for clipboard shortcuts
+            client.addKeyboardHandler(clipboardHandler, browser.cefBrowser)
+            
+            logger.info("Wayland clipboard handler setup completed")
+        } catch (e: Exception) {
+            logger.error("Failed to setup clipboard handler", e)
+        }
+    }
+    
     private fun setupJSBridge() {
         // Create JS query object to handle messages from webview
         jsQuery = JBCefJSQuery.create(browser)
@@ -739,7 +758,28 @@ class WebViewInstance(
         // Set callback for receiving messages from webview
         jsQuery?.addHandler { message ->
             coroutineScope.launch {
-                // Handle message
+                // Check if this is a clipboard-related message
+                try {
+                    val messageObj = gson.fromJson(message, JsonObject::class.java)
+                    val messageType = messageObj.get("type")?.asString
+                    
+                    when (messageType) {
+                        "clipboard-copy", "clipboard-cut" -> {
+                            // Handle clipboard copy/cut operations
+                            val text = messageObj.get("text")?.asString
+                            if (text != null) {
+                                val clipboardHandler = WaylandClipboardHandler()
+                                clipboardHandler.copyToClipboard(text)
+                                logger.info("Clipboard operation handled: $messageType")
+                            }
+                            return@launch
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Not a JSON message or doesn't have expected structure, proceed normally
+                }
+                
+                // Handle regular message
                 val protocol = project.getService(PluginContext::class.java).getRPCProtocol()
                 if (protocol != null) {
                     // Send message to plugin host
